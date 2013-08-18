@@ -21,7 +21,7 @@ function love.load()
       for x, y, tile in map(layer.name):iterate() do
          -- print( string.format("Tile at (%d,%d) has an id of %d", x, y, tile.id) )
          local shape = nil
-         if tile.properties.isSolid == 1 then
+         if tile.properties.isSolid == 1 or tile.properties.isSpring == 1 then
             shape = Collider:addRectangle(x*map.tileWidth, y*map.tileHeight, tile.width, tile.height)
          elseif tile.properties.isCorner ~= nil then
             if tile.properties.isCorner == 1 then
@@ -48,22 +48,16 @@ function love.load()
    cam_speed = 5
 
    -- state
-   direction = { 0, 0 }
    lastdir = 0
-   wormShape = Collider:addCircle(300, 300, 16)
+   wormShape = Collider:addCircle(272, 272, 16)
    wormShape.velocity = { x = 0, y = 0 }
    last = { 0, 0, 0, 0 } -- left right up down
    tailpos = { }
-   for i=1, 200 do
-      tailpos[i] = 300
+   for i=1, 500 do
+      tailpos[i] = 272
    end
    tx,ty = 0,0
 end
-
---[[
-   idea: possibly make the directional keys just set a "goal" velocity
-   and then just ramp up to that velocity elsewhere?
-]]--
 
 -- utility functions
 
@@ -143,14 +137,25 @@ function on_collide(dt, shape_a, shape_b)
    else
       return
    end
-   if worm ~= nil and other.properties.isSolid == 1 then
+   if worm ~= nil then
       local ox, oy = other:center()
       local wx, wy = worm:center()
-      if ((ox > wx and worm.velocity.x > 0) or (ox < wx and worm.velocity.x < 0)) and (math.abs(oy-wy) < 16) then
-         worm.velocity.x = 0
-      end
-      if ((oy > wy and worm.velocity.y > 0) or (oy < wy and worm.velocity.y < 0)) and (math.abs(ox-wx) < 16) then
-         worm.velocity.y = 0
+      if other.properties.isSolid == 1 then
+         if ((ox > wx and worm.velocity.x > 0) or (ox < wx and worm.velocity.x < 0)) and (math.abs(oy-wy) < 16) then
+            worm.velocity.x = 0
+         end
+         if ((oy > wy and worm.velocity.y > 0) or (oy < wy and worm.velocity.y < 0)) and (math.abs(ox-wx) < 16) then
+            worm.velocity.y = 0
+         end
+      elseif other.properties.isSpring == 1 then
+         if other.properties.smaller ~= 1 or ((other.properties.smaller == 1) and (math.abs(ox-wx) < 8) and (math.abs(oy-wy) < 8)) then
+            if other.properties.springX ~= nil then
+               worm.velocity.x = other.properties.springX * 500
+            end
+            if other.properties.springY ~= nil then
+               worm.velocity.y = other.properties.springY * 500
+            end
+         end
       end
    end
 end
@@ -233,7 +238,7 @@ function love.draw()
    map:draw()
    --
    local div = wormShape.velocity.y/wormShape.velocity.x
-   for i=1, 100 do
+   for i=1, #tailpos/2 do
       if i%5 == 0 then
          love.graphics.drawq(tail, tquad, tailpos[i*2-1], tailpos[i*2], 0, 1, 1, tail:getWidth()/2, tail:getHeight()/2)
       end
@@ -242,5 +247,5 @@ function love.draw()
    love.graphics.drawq(image, quad, wormX, wormY, dir(wormShape.velocity.x, wormShape.velocity.y), 1, 1, image:getWidth()/2, image:getHeight()/2)
    -- love.graphics.circle("fill", wormX, wormY, 16)
    love.graphics.setFont(fixedWidth);
-   osd(string.format("pos: x:%5d y:%5d\ncam: x:%5d y:%5d", wormX, wormY, tx, ty))
+   -- osd(string.format("pos: x:%5d y:%5d\ncam: x:%5d y:%5d", wormX, wormY, tx, ty))
 end
