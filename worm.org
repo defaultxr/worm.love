@@ -1,0 +1,103 @@
+* "worm"
+
+i might come up with a better title in the future. but right now that's what i'm calling it.
+
+* roadmap
+
+** current status:
+
+*** written in lua/love (was gonna be common lisp but i'm too lazy)
+
+*** extremely basic movement is complete (arrow keys, momentum)
+
+** version 0.1 should be the first official version, all the basic logic should be complete:
+
+*** player movement logic (momentum, boosting, braking, etc, should be implemented and tweaked to the point where only minor adjustments might be needed in the future)
+
+*** attacking logic
+
+*** tile logic (i.e. holes, traps, "normal" tiles, walls, etc, should all work as expected)
+
+*** enemy logic
+
+*** room logic (load current room, process all objects within it, possibly load adjacent rooms in the background)
+
+*** obviously we'll also need a small "level" to test all this out in.
+
+** version 0.2 should have more polish:
+
+*** more graphical stuff (get rid of placeholders)
+
+*** first level complete
+
+*** power-ups/weapons
+
+** versions after that should continue this progression
+
+* gameplay
+
+** 2D top-down view like Game Boy Zeldas, but more focused on action, like (genesis) 2D Sonics
+
+** it'd be cool to, for the most part, be the top-down style, but (much like some parts of Link's Awakening) have the ability to switch to side-scroller sections.
+
+** you play as a worm, your health is represented by the length of your "tail"
+
+** the game is partially inspired by rhythm games in that a lot of game events are sync'd to the music. for example, enemies might move in beat to the music, and parts of the level might make noises in beat. you will do better in the game if you're also in sync with the music and you'll also get "style" (bonus) points if you are.
+
+* movement
+
+** the main way to move around is the obvious one: use the arrow keys to build up momentum in whichever direction you want to go. you can also double-tap an arrow key to "boost" in that direction.
+
+** in a later level, you gain the ability to shoot out a "grapple" and rotate in a circle around it. you can build up momentum very quickly this way. you can release the grapple at any time and you'll go flying in the direction you were pointing when you released it.
+
+* attacks
+
+** since you're a worm, if your tail is long enough, you can wrap around enemies to kill them
+
+** you can also shoot projectiles (haven't put a lot of thought into this part yet)
+
+* plot
+
+** the game will be made up of independent "episodes" that perhaps connect together somehow
+
+** i'm trying to avoid game cliches like "save the world by collecting these 6 items" or whatever
+
+** each level should have a different plot behind it and a different reason you're going thru it.
+
+** there should be plenty of memorable weird characters, some inspired by killer7, some by the more strange moments of Zelda
+
+* levels
+
+i think there should be 6 levels in total. they should be pretty long, some being linear but with alternate routes (like in Sonic 2 or 3), while others are more puzzle-heavy like Zelda. probably split each level up into different sections (or "acts" like in Sonic, but not as separate; there should be more flow between them). and split each section into "rooms" sort of like the 2D metroids did, except, again, less "separate" if possible. ideally the player shouldn't notice that each level is split into "rooms" unless they look at a map or whatever. splitting each level into rooms would simplify the logic required to keep track of what enemies and objects to load. if each level was one big "room" things could get messy since enemies would have to be loaded based on proximity to the player. splitting the levels into smaller rooms would turn that logic into a simple "load everything in the player's current room" function, and perhaps load data for the adjacent rooms in the background.
+
+each level should be really distinct and look very different from the others. they each should have their own atmosphere and unique visual effects.
+
+** intro level
+
+*** fairly simple, easy level to introduce the game
+
+*** probably sort of inspired by emerald hill zone
+
+** dusk/shore level
+
+*** inspired by Muslimgauze - Sanskrit, but especially Muslimgauze - Saudi.
+
+*** a level where you travel along a beach/shore at night, and sometimes waves come up on shore & affect movement
+
+*** a 2D-platformer style level
+
+*** it's at dusk so it's dark/trippy/chill
+
+** forest level
+
+*** inspired by General Magic & Pita - Live and Final Fridge
+
+** dph level
+
+*** dark alternate dimension
+
+*** NPCs speak in an indecipherable language, or perhaps in silence
+
+** still need to come up with 2 other level ideas (lol)
+
+
