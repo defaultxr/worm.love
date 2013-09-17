@@ -98,6 +98,35 @@ each level should be really distinct and look very different from the others. th
 
 *** NPCs speak in an indecipherable language, or perhaps in silence
 
-** still need to come up with 2 other level ideas (lol)
+** crystal level
 
+** still need to come up with another level idea
 
+* music
+
+** modula t. worm - game over
+
+** 33 - Fast Ooze
+*** Happy Termites (for bad guys)
+*** Morning Shower (credits)
+*** Mental Illness
+*** Escape Zone
+*** Setup
+*** Decision
+*** Large Trout (final level)
+*** Surrender (jungle level?)
+*** Corrupt
+*** Strobe (store?)
+*** Reason (crystal area)
+*** Unidirectional (for a bonus area)
+*** Slaughterhouse (for a machine area)
+*** Anabella (for a crystal area)
+
+* enemies
+
+** halftone
+*** made up of halftones
+
+* ideas
+
+** boss enemy - when you defeat him/her, they explode for a few seconds but don't disappear, and then the victory sequence plays. later, they are a boss for the second time, much more powerful

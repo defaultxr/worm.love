@@ -16,11 +16,15 @@ function love.load()
    tquad = love.graphics.newQuad(0, 0, tail:getWidth(), tail:getHeight(), tail:getWidth(), tail:getHeight())
    tiles = love.graphics.newImage("tiles.png")
    enemy1 = love.graphics.newQuad(32, 160, 32, 32, tiles:getWidth(), tiles:getHeight())
-   teleport = love.graphics.newQuad(64, 160, 32, 32, tiles:getWidth(), tiles:getHeight())
+   teleport = love.graphics.newQuad(192, 64, 32, 32, tiles:getWidth(), tiles:getHeight())
 
    -- sounds
    require 'slam'
    doof = love.audio.newSource("doof.ogg", 'source')
+
+   -- defaults
+
+   startPos = {512, 512}
 
    -- lists
    walls = { }
@@ -66,6 +70,8 @@ function love.load()
                   if tile.properties.isCorner == 1 then
                      shape = Collider:addPolygon(x*map.tileWidth, y*map.tileHeight, (x*map.tileWidth)+tile.width, y*map.tileHeight, x*map.tileWidth, (y*map.tileHeight)+tile.height)
                   end
+               elseif tile.properties.startPos == 1 then
+                  startPos = {(x*map.tileWidth)+16, (y*map.tileHeight)+16}
                end
                if shape ~= nil then
                   shape.properties = tile.properties
@@ -97,24 +103,44 @@ function love.load()
 
    -- state
    speedmul = 1 -- speed multiplier, based on the ground you're standing on.
-   wormShape = Collider:addCircle(272, 272, 14)
+   wormShape = Collider:addCircle(startPos[1], startPos[2], 14)
+   local nnn = 14
+   wormShape_t = Collider:addPoint(startPos[1], startPos[2]-nnn)
+   wormShape_b = Collider:addPoint(startPos[1], startPos[2]+nnn)
+   wormShape_l = Collider:addPoint(startPos[1]-nnn, startPos[2])
+   wormShape_r = Collider:addPoint(startPos[1]+nnn, startPos[2])
+   ws = {wormShape_t, wormShape_b, wormShape_l, wormShape_r}
+   Collider:addToGroup("worm", wormShape, wormShape_t, wormShape_b, wormShape_l, wormShape_r)
    wormShape.velocity = { x = 0, y = 0 }
-   wormShape.l = { x = 272, y = 272 }
+   wormShape.l = { x = startPos[1], y = startPos[2] }
    wormShape.lastdir = 0
    wormShape.springing = 0
    wormShape.teleporting = 0
-   last = { 0, 0, 0, 0 } -- left right up down
+   wormShape.walls = { x = 0, y = 0 }
+   wormShape.health = 100
+   last = { l = 0, r = 0, u = 0, d = 0 } -- left right up down
    worm_onscreen = true
    tailpos = { }
    for i=1, 200 do
-      tailpos[i] = 272
+      tailpos[i] = -32
    end
-   tx,ty = 0,0
+   tx,ty = -startPos[1],-startPos[2]
+
+   -- misc
 
    message("HI")
 end
 
 -- utility functions
+
+function positionWSP() -- position wormShape points
+   local nnn = 15
+   local cx, cy = wormShape:center()
+   wormShape_t:moveTo(cx, cy-nnn)
+   wormShape_b:moveTo(cx, cy+nnn)
+   wormShape_l:moveTo(cx-nnn, cy)
+   wormShape_r:moveTo(cx+nnn, cy)
+end
 
 function sign(num)
    if num == 0 then
@@ -180,28 +206,34 @@ function love.keypressed(key, unicode)
    -- timers
    local ctime = love.timer.getTime()
    if key == "left" then
-      if (ctime - last[1]) < boosttime then
+      if (ctime - last.l) < boosttime then
          wormShape.velocity.x = wormShape.velocity.x - 500
       end
-      last[1] = ctime
+      last.l = ctime
    end
    if key == "right" then
-      if (ctime - last[2]) < boosttime then
+      if (ctime - last.r) < boosttime then
          wormShape.velocity.x = wormShape.velocity.x + 500
       end
-      last[2] = ctime
+      last.r = ctime
    end
    if key == "up" then
-      if (ctime - last[3]) < boosttime then
+      if (ctime - last.u) < boosttime then
          wormShape.velocity.y = wormShape.velocity.y - 500
       end
-      last[3] = ctime
+      last.u = ctime
    end
    if key == "down" then
-      if (ctime - last[4]) < boosttime then
+      if (ctime - last.d) < boosttime then
          wormShape.velocity.y = wormShape.velocity.y + 500
       end
-      last[4] = ctime
+      last.d = ctime
+   end
+   if key == "a" then
+      wormShape.health = clip(wormShape.health+1, 0, 100)
+   end
+   if key == "s" then
+      wormShape.health = clip(wormShape.health-1, 0, 100)
    end
 end
 
@@ -220,33 +252,49 @@ function on_collide(dt, shape_a, shape_b, dx, dy)
       rdx = -dx
       rdy = -dy
    else
+      -- printtable(shape_a.properties)
+      -- printtable(shape_b.properties)
+      if ((shape_a == wormShape_t) or (shape_a == wormShape_b) or (shape_a == wormShape_l) or (shape_a == wormShape_r)) then
+         worm = shape_a
+         other = shape_b
+      elseif ((shape_b == wormShape_t) or (shape_b == wormShape_b) or (shape_b == wormShape_l) or (shape_b == wormShape_r)) then
+         worm = shape_b
+         other = shape_a
+      else
+         return
+      end
+      if worm == wormShape_t then
+         wormShape.walls.y = -1
+      elseif worm == wormShape_b then
+         wormShape.walls.y = 1
+      elseif worm == wormShape_l then
+         wormShape.walls.x = -1
+      elseif worm == wormShape_r then
+         wormShape.walls.x = 1
+      end
       return
    end
    if worm ~= nil then
       local ox, oy = other:center()
       local wx, wy = worm:center()
       if other.properties.isSolid == 1 then
-         print("delta: "..rdx..", "..rdy)
          -- worm.velocity.x = worm.velocity.x + dx
          -- worm.velocity.y = worm.velocity.y + dy
          -- if math.abs(dx) < 32 and math.abs(dy) < 32 then
          if math.abs(rdx) > 16 or math.abs(rdy) > 16 then
-            -- message("ignored")
             worm:moveTo(worm.l.x, worm.l.y)
          else
-            -- message("moved")
             worm:move(rdx, rdy)
          end
-         -- end
          -- worm:moveTo(worm.l.x, worm.l.y)
-         if ((ox > wx and worm.velocity.x > 0) or (ox < wx and worm.velocity.x < 0)) then -- and (math.abs(oy-wy) < 16) then
+         if ((ox > wx and worm.velocity.x > 0) or (ox < wx and worm.velocity.x < 0)) and (math.abs(oy-wy) < 16) then
             worm.velocity.x = 0
          end
-         if ((oy > wy and worm.velocity.y > 0) or (oy < wy and worm.velocity.y < 0)) then -- and (math.abs(ox-wx) < 16) then
+         if ((oy > wy and worm.velocity.y > 0) or (oy < wy and worm.velocity.y < 0)) and (math.abs(ox-wx) < 16) then
             worm.velocity.y = 0
          end
       elseif other.properties.isSpring == 1 and worm.springing == 0 then
-         if dist(wx, wy, ox, oy) < 10 then
+         if dist(wx, wy, ox, oy) < 16 then
             doof:play()
             worm:moveTo(ox, oy)
             worm.springing = 1
@@ -294,6 +342,24 @@ function on_nullide(dt, shape_a, shape_b)
       worm = shape_b
       other = shape_a
    else
+      if ((shape_a == wormShape_t) or (shape_a == wormShape_b) or (shape_a == wormShape_l) or (shape_a == wormShape_r)) then
+         worm = shape_a
+         other = shape_b
+      elseif ((shape_b == wormShape_t) or (shape_b == wormShape_b) or (shape_b == wormShape_l) or (shape_b == wormShape_r)) then
+         worm = shape_b
+         other = shape_a
+      else
+         return
+      end
+      if worm == wormShape_t then
+         wormShape.walls.y = 0
+      elseif worm == wormShape_b then
+         wormShape.walls.y = 0
+      elseif worm == wormShape_l then
+         wormShape.walls.x = 0
+      elseif worm == wormShape_r then
+         wormShape.walls.x = 0
+      end
       return
    end
    if other.properties.isSpring == 1 then
@@ -301,6 +367,23 @@ function on_nullide(dt, shape_a, shape_b)
    end
    if other.properties.slows ~= nil then
       speedmul = 1
+   end
+end
+
+function onScreen(shape)
+   local wormX, wormY = shape:center()
+   return ((wormX > (-1*tx)) and
+           (wormY > (-1*ty)) and
+           (wormX < math.abs(tx)+screen_width) and
+           (wormY < math.abs(ty)+screen_height))
+end
+
+function wormWall(x, y)
+   if y == nil then y = 0 end
+   if x ~= 0 then
+      return (x == wormShape.walls.x)
+   elseif y ~= 0 then
+      return (y == wormShape.walls.y)
    end
 end
 
@@ -312,13 +395,14 @@ function love.update(dt)
    end
    -- actually alter the position of the character
    local wormX, wormY = wormShape:center()
-   if wormX > math.abs(tx) and wormY > math.abs(ty) and (wormX < math.abs(tx)+screen_width) and (wormY < math.abs(ty)+screen_height) then
-      wormShape:move((dt * wormShape.velocity.x), (dt * wormShape.velocity.y))
+   if onScreen(wormShape) then
+      wormShape:moveTo(wormX+(dt * wormShape.velocity.x), wormY+(dt * wormShape.velocity.y))
       if wormShape.teleporting > 0 then
          wormShape.teleporting = wormShape.teleporting - dt
       elseif wormShape.teleporting < 0 then
          wormShape.teleporting = 0
       end
+      positionWSP()
       Collider:update(dt)
       -- for i=1, 70 do
       -- print((dt * wormShape.velocity.y)/70)
@@ -335,13 +419,13 @@ function love.update(dt)
       local right = love.keyboard.isDown("right")
       local up = love.keyboard.isDown("up")
       local down = love.keyboard.isDown("down")
-      if left and not right then
+      if left and not right and not wormWall(-1) then
          if wormShape.velocity.x > 0 then
             wormShape.velocity.x = wormShape.velocity.x + (-1 * dt * decel)
          else
             wormShape.velocity.x = wormShape.velocity.x + (-1 * dt * accel)
          end
-      elseif right and not left then
+      elseif right and not left and not wormWall(1) then
          if wormShape.velocity.x < 0 then
             wormShape.velocity.x = wormShape.velocity.x + (dt * decel)
          else
@@ -354,13 +438,13 @@ function love.update(dt)
             wormShape.velocity.x = wormShape.velocity.x - ((dt * accel) * sign(wormShape.velocity.x))
          end
       end
-      if up and not down then
+      if up and not down and not wormWall(0, -1) then
          if wormShape.velocity.y > 0 then
             wormShape.velocity.y = wormShape.velocity.y + (-1 * dt * decel)
          else
             wormShape.velocity.y = wormShape.velocity.y + (-1 * dt * accel)
          end
-      elseif down and not up then
+      elseif down and not up and not wormWall(0, 1) then
          if wormShape.velocity.y < 0 then
             wormShape.velocity.y = wormShape.velocity.y + (dt * decel)
          else
@@ -417,18 +501,20 @@ function love.draw()
    map:autoDrawRange(math.floor(tx), math.floor(ty), 1, pad)
    map:draw()
    -- for i, wall in pairs(walls) do
-      -- wall:draw()
+   --    wall:draw()
    -- end
-   --
-   for i=1, #tailpos/2 do
-      if i%5 == 0 then
+   -- for i, obj in pairs(ws) do
+   --    obj:draw()
+   -- end
+   -- wormShape:draw()
+   for i=1, 100 do
+      if (i>=(101-wormShape.health)) then
          love.graphics.drawq(tail, tquad, tailpos[i*2-1], tailpos[i*2], 0, 1, 1, tail:getWidth()/2, tail:getHeight()/2)
       end
    end
    local wormX, wormY = wormShape:center()
    wormShape.lastdir = dir(wormShape.velocity.x, wormShape.velocity.y, wormShape.lastdir)
    love.graphics.drawq(image, quad, wormX, wormY, wormShape.lastdir, 1, 1, image:getWidth()/2, image:getHeight()/2)
-   -- wormShape:draw()
    for i, enemy in pairs(enemies) do
       local centerx, centery = enemy:center()
       if enemy.properties.enemyType == 1 then
@@ -444,6 +530,6 @@ function love.draw()
       cosd = cosd .. msg.text
    end
    -- osd(cosd)
-   osd(string.format("worm.teleporting: %5d\ntx: %5d ty: %5d\nwx: %5d wy: %5d", wormShape.teleporting, tx, ty, wormX, wormY))
-   love.graphics.print("Current FPS: "..tostring(love.timer.getFPS()), math.floor(10-tx), math.floor(10-ty))
+   osd(string.format("Current FPS: %d\nhealth: %3d\nwalls: %2d %2d\nworm.teleporting: %5d\ntx: %5d ty: %5d\nwx: %5d wy: %5d", love.timer.getFPS(), wormShape.health, wormShape.walls.x, wormShape.walls.y, wormShape.teleporting, tx, ty, wormX, wormY))
+   -- love.graphics.print("Current FPS: "..tostring(love.timer.getFPS()), math.floor(10-tx), math.floor(10-ty))
 end

@@ -28,3 +28,8 @@ That should work. I haven't tried it so I can't guarantee it.
 Alternatively, you could just zip the contents of the worm.love folder up, name it "worm.love" and then double-click it. That might be easier but then if you change anything in the actual folder called worm.love, it won't affect the worm.love zipped file.
 
 If you try that and get an error about the file not being packaged correctly, it means that you zipped the folder instead of just the contents of the folder. Make sure you select all the files inside the worm.love folder, then right-click and zip that. It should work then.
+
+problems
+========
+
+If you have any, tell me. Sometimes i forget to add things to the repo.
