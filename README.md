@@ -3,6 +3,8 @@ worm.love
 
 action game written in lua/love
 
+This is defunct. I'm working on a new version now and this version has been scrapped.
+
 how to set it up
 ================
 
